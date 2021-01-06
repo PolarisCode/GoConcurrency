@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"sync"
 	"time"
 )
 
@@ -12,29 +13,33 @@ func main() {
 
 	rand.Seed(time.Now().UnixNano())
 
+	wg := &sync.WaitGroup{}
+
 	for i := 0; i < 10; i++ {
 		id := rand.Intn(10) + 1
-
-		go func(id int) {
+		wg.Add(2) // adding number of tasks for wait
+		go func(id int, wg *sync.WaitGroup) {
 			if b, ok := getFromCache(id); ok {
 				fmt.Println("from cache")
 				fmt.Println(b)
 
 			}
-		}(id)
+			wg.Done() // signal that task was done
+		}(id, wg)
 
-		go func(id int) {
+		go func(id int, wg *sync.WaitGroup) {
 			if b, ok := getFromDb(id); ok {
 				fmt.Println("from db")
 				fmt.Println(b)
 
 			}
-		}(id)
+			wg.Done()
+		}(id, wg)
 
 		time.Sleep(150 * time.Millisecond)
 	}
 
-	time.Sleep(2 * time.Second)
+	wg.Wait() // wait for all routines are done
 }
 
 func getFromCache(id int) (Book, bool) {
