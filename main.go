@@ -15,7 +15,7 @@ func main() {
 	for i := 0; i < 10; i++ {
 		id := rand.Intn(10) + 1
 
-		func(id int) {
+		go func(id int) {
 			if b, ok := getFromCache(id); ok {
 				fmt.Println("from cache")
 				fmt.Println(b)
@@ -23,7 +23,7 @@ func main() {
 			}
 		}(id)
 
-		func(id int) {
+		go func(id int) {
 			if b, ok := getFromDb(id); ok {
 				fmt.Println("from db")
 				fmt.Println(b)
@@ -33,6 +33,8 @@ func main() {
 
 		time.Sleep(150 * time.Millisecond)
 	}
+
+	time.Sleep(2 * time.Second)
 }
 
 func getFromCache(id int) (Book, bool) {
@@ -41,6 +43,7 @@ func getFromCache(id int) (Book, bool) {
 }
 
 func getFromDb(id int) (Book, bool) {
+	time.Sleep(100 * time.Millisecond)
 	for _, b := range books {
 		if b.ID == id {
 			cache[id] = b
