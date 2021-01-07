@@ -14,12 +14,12 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	wg := &sync.WaitGroup{}
-	m := &sync.Mutex{}
+	m := &sync.RWMutex{}
 
 	for i := 0; i < 20; i++ {
 		id := rand.Intn(10) + 1
 		wg.Add(2) // adding number of tasks for wait
-		go func(id int, wg *sync.WaitGroup, m *sync.Mutex) {
+		go func(id int, wg *sync.WaitGroup, m *sync.RWMutex) {
 			if b, ok := getFromCache(id, m); ok {
 				fmt.Println("from cache")
 				fmt.Println(b)
@@ -28,7 +28,7 @@ func main() {
 			wg.Done() // signal that task was done
 		}(id, wg, m)
 
-		go func(id int, wg *sync.WaitGroup, m *sync.Mutex) {
+		go func(id int, wg *sync.WaitGroup, m *sync.RWMutex) {
 			if b, ok := getFromDb(id, m); ok {
 				fmt.Println("from db")
 				fmt.Println(b)
@@ -42,14 +42,14 @@ func main() {
 	wg.Wait() // wait for all routines are done
 }
 
-func getFromCache(id int, m *sync.Mutex) (Book, bool) {
-	m.Lock()
+func getFromCache(id int, m *sync.RWMutex) (Book, bool) {
+	m.RLock()
 	b, ok := cache[id]
-	m.Unlock()
+	m.RUnlock()
 	return b, ok
 }
 
-func getFromDb(id int, m *sync.Mutex) (Book, bool) {
+func getFromDb(id int, m *sync.RWMutex) (Book, bool) {
 	time.Sleep(100 * time.Millisecond)
 	for _, b := range books {
 		if b.ID == id {
